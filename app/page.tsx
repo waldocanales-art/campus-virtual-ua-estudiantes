@@ -40,7 +40,7 @@ export default function Home(){
  const sheetId=g.sheet_id||a.sheet_id||'';
  const integrantes=Array.isArray(g.integrantes)?g.integrantes:[];
  const docUrl=data?.documentos?.drive_url||'';
- const perfilDocUrl=data?.documentos?.perfil_documental_url||'';
+ const perfilDocUrl=data?.documentos?.perfil_documental_url||(sheetId?`https://autonoma-del-peru.app.n8n.cloud/webhook/v6-core-documentos-epg?sheet_id=${encodeURIComponent(sheetId)}`:'');
 
  function askAssistant(){
   const q=question.trim().toLowerCase();
@@ -110,7 +110,7 @@ export default function Home(){
   <div className="card">
    <div className="doc"><b className="state">{docUrl?'✓':'!'}</b><div><strong>Expediente del estudiante</strong><small>{docUrl?'Drive localizado':'Sin enlace de Drive disponible'}</small></div></div>
    {docUrl&&<a className="primary linkbtn" href={docUrl} target="_blank" rel="noreferrer">Abrir documentos</a>}
-   {perfilDocUrl&&<a className="outline linkbtn" href={perfilDocUrl} target="_blank" rel="noreferrer">Ver estado documental</a>}
+   {perfilDocUrl&&<a className="outline linkbtn" href={perfilDocUrl} target="_blank" rel="noreferrer">Ver diferencias y errores documentales</a>}
   </div>
   <h3>Avance</h3><div className="card review"><h2>{p.progreso??0}%</h2><span>Progreso por fase actual</span><div className="bar"><i style={{width:`${p.progreso??0}%`}}/></div><p>Estado <b>{p.estado||'—'}</b></p></div>
  </section>}
