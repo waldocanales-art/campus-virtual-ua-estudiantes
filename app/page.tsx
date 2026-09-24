@@ -79,7 +79,7 @@ export default function Home(){
   <div className="card">
    <div className="between"><b>Mi proceso</b><span className="warn">{p.pendientes??0} pendientes</span></div>
    <div className="steps">{phases.map((x,i)=><div className={'step '+(i+1<faseN?'done':i+1===faseN?'active':'')} key={x[0]}><i>{i+1<faseN?'✓':x[0]}</i><small>{x[1]}</small></div>)}</div>
-   <div className="status"><small>ETAPA ACTUAL</small><h2>{p.fase||'—'} · {faseNames[p.fase]||'Sin fase'}</h2><p>Estado: <b>{p.estado||'Sin información'}</b></p></div>
+   <div className="status"><small>ETAPA ACTUAL</small><h2>{p.etiqueta||([p.fase,faseNames[p.fase]].filter(Boolean).join(' · '))||'Sin fase'}</h2><p>Estado: <b>{p.estado||'Sin información'}</b></p></div>
    <button className="primary" onClick={()=>setTab('documentos')}>Ver qué debo hacer →</button>
   </div>
   <h3>Próxima acción</h3>
@@ -134,7 +134,7 @@ export default function Home(){
 
  {ai&&<div className="overlay" onClick={()=>setAi(false)}><div className="assistant" onClick={e=>e.stopPropagation()}>
   <div className="between"><h3>✨ Asistente UA</h3><button onClick={()=>setAi(false)}>×</button></div>
-  <div className="bubble">Hola {String(a.nombre||'').split(' ')[0]||''}. Tu fase actual es <b>{p.fase||'—'}</b> y tu próxima acción es <b>{p.proxima_accion||'consultar coordinación'}</b>.</div>
+  <div className="bubble">Hola {String(a.nombre||'').split(' ')[0]||''}. Tu etapa actual es <b>{p.etiqueta||p.fase||'—'}</b> y tu próxima acción es <b>{p.proxima_accion||'consultar coordinación'}</b>.</div>
   {answer&&<div className="ububble">{answer}</div>}
   <div className="ask"><input value={question} onChange={e=>setQuestion(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')askAssistant()}} placeholder="Pregunta por fase, grupo, documentos o citas..."/><button onClick={askAssistant}>➤</button></div>
  </div></div>}
