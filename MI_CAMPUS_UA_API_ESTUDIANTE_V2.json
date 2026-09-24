@@ -1,0 +1,195 @@
+{
+  "name": "MI CAMPUS UA · API ESTUDIANTE V2",
+  "nodes": [
+    {
+      "id": "w",
+      "name": "GET API Estudiante",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "mi-campus-ua-api-estudiante",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "e",
+      "name": "Leer Equipos GRADUATE EPG",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ctlmzDUmIMxE16AJ",
+          "cachedResultName": "Equipos GRADUATE EPG"
+        },
+        "returnAll": true
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "a",
+      "name": "Leer Base 1775 Alumnos",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "MrlpVAtHQS5j02B9",
+          "cachedResultName": "Base 1775 Alumnos"
+        },
+        "returnAll": true
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "r",
+      "name": "Leer Reuniones EPG",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "Px4vZEYPiCw2CdJ8",
+          "cachedResultName": "Reuniones EPG"
+        },
+        "returnAll": true
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "c",
+      "name": "Construir Ficha Estudiante V2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const norm=v=>String(v??'').trim().toLowerCase();\nconst val=(...xs)=>xs.find(v=>v!==undefined&&v!==null&&String(v).trim()!=='')??'';\nconst rows=n=>{try{return $(n).all().map(i=>i.json).filter(x=>x&&Object.keys(x).length)}catch(e){return[]}};\nconst q=$('GET API Estudiante').first().json.query||{},email=norm(q.email),dni=norm(q.dni),codigo=norm(q.codigo);\nif(!email&&!dni&&!codigo)return[{json:{ok:false,error:'IDENTIDAD_REQUERIDA',message:'Enviar email, dni o codigo'}}];\nconst equipos=rows('Leer Equipos GRADUATE EPG'),alumnos=rows('Leer Base 1775 Alumnos'),reuniones=rows('Leer Reuniones EPG');\nconst emails=o=>[o.email,o.email_1,o.email_2,o.email_3,o.emails_grupo,o.correo,o.correo_institucional,o.correo_personal,o.correo_laboral,o.email_address].filter(Boolean).flatMap(v=>String(v).split(/[;,\\s]+/)).map(norm).filter(Boolean);\nconst match=o=>(email&&emails(o).includes(email))||(dni&&[o.dni,o.DNI].map(norm).includes(dni))||(codigo&&[o.codigo,o.codigo_alumno,o.cod_alumno].map(norm).includes(codigo));\nconst a=alumnos.find(match)||null;\nlet candidatos=equipos.filter(match);\nif(!candidatos.length&&a){const keys=[a.grupo,a.grupo_datatable,a.sheet_id,a.id_grupo,a.apellidos_alumnos,a.nombre_carpeta,a.nombre_completo,a.alumno].map(norm).filter(Boolean);candidatos=equipos.filter(x=>{const xkeys=[x.grupo,x.id_grupo,x.sheet_id,x.apellidos_alumnos,x.nombre_carpeta,x.indice].map(norm);return keys.some(k=>xkeys.includes(k))})}\nconst score=e=>{const raw=String(val(e.fase_actual,e.fase_datatable,e.fase,e.etapa_proceso)),m=raw.match(/F?\\s*([1-6])/i);let s=(m?Number(m[1]):0)*100;if(val(e.sheet_id,e.id_grupo))s+=20;if(val(e.drive_url,e.web_view_link,e.folder_url))s+=10;if(email&&emails(e).includes(email))s+=50;return s};\nconst e=candidatos.sort((x,y)=>score(y)-score(x))[0]||null;\nif(!a&&!e)return[{json:{ok:false,error:'NO_ENCONTRADO',message:'No se encontró un estudiante asociado'}}];\nconst raw=val(e?.fase_actual,e?.fase_datatable,e?.fase,e?.etapa_proceso,a?.fase_actual,a?.fase_datatable,a?.fase,a?.etapa_proceso),m=String(raw).match(/F?\\s*([1-6])/i),fase=m?'F'+m[1]:'SIN_FASE',n=m?Number(m[1]):0;\nconst sheetId=val(e?.sheet_id,e?.id_grupo,a?.sheet_id,a?.id_grupo);\nconst grupoNombre=val(e?.nombre_carpeta,e?.apellidos_alumnos,e?.grupo,a?.grupo_nombre,a?.grupo,a?.apellidos_alumnos);\nconst driveUrl=val(e?.drive_url,e?.web_view_link,e?.folder_url,a?.drive_url,a?.web_view_link,a?.folder_url);\nconst integrantes=[{nombre:val(e?.integrante_1),email:val(e?.email_1)},{nombre:val(e?.integrante_2),email:val(e?.email_2)},{nombre:val(e?.integrante_3),email:val(e?.email_3)}].filter(x=>x.nombre||x.email);\nconst rel=[email,dni,codigo,norm(sheetId),norm(grupoNombre)].filter(Boolean);\nconst cita=reuniones.filter(r=>{const h=[...emails(r),norm(r.dni),norm(r.codigo),norm(r.grupo),norm(r.sheet_id)];return rel.some(v=>h.includes(v))}).sort((x,y)=>new Date(x.fecha_confirmada||x.fecha||x.start||'2999-12-31')-new Date(y.fecha_confirmada||y.fecha||y.start||'2999-12-31'))[0]||null;\nconst acciones={F1:'Completar ingreso y validación inicial',F2:'Completar documentos requeridos',F3:'Atender preparación y guía',F4:'Revisar y corregir observaciones',F5:'Completar programación de sustentación o repositorio según estado',F6:'Completar repositorio y cierre'};\nconst perfilUrl=sheetId?'https://autonoma-del-peru.app.n8n.cloud/webhook/v6-perfil-documental-epg-v11?sheet_id='+encodeURIComponent(sheetId):'';\nreturn[{json:{ok:true,generated_at:new Date().toISOString(),alumno:{nombre:val(a?.nombre_completo,a?.nombres,a?.alumno,e?.integrante_1,e?.nombre_carpeta,'Estudiante'),email:email||emails(a||e||{})[0]||'',dni:val(a?.dni,a?.DNI),codigo:val(a?.codigo,a?.codigo_alumno,a?.cod_alumno),programa:val(e?.programa,a?.programa,a?.programa_academico,a?.maestria,a?._prog,'Sin programa'),grupo:grupoNombre,grupo_nombre:grupoNombre,sheet_id:sheetId},grupo:{sheet_id:sheetId,nombre:grupoNombre,integrantes,drive_url:driveUrl},proceso:{fase,estado:val(e?.estado_atencion,e?.estado_gradua,e?.estado,a?.estado_atencion,a?.estado_gradua,a?.estado,'En proceso'),progreso:n?Math.round(n/6*100):0,pendientes:Number(val(e?.pendientes,e?.total_pendientes,a?.pendientes,a?.total_pendientes,0)),proxima_accion:acciones[fase]||'Contactar coordinación',ultima_actividad:val(e?.ultima_actividad_iso,e?.ultima_actividad,a?.ultima_actividad_iso,a?.ultima_actividad,a?.actualizado,null)},documentos:{drive_url:driveUrl,perfil_documental_url:perfilUrl},cita:cita?{fecha:val(cita.fecha_confirmada,cita.fecha,cita.start),hora:val(cita.hora,cita.hora_confirmada),meeting_url:val(cita.meeting_url,cita.link,cita.url),estado:val(cita.estado,'programada')}:null}}];"
+      }
+    },
+    {
+      "id": "x",
+      "name": "Responder JSON",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "GET API Estudiante": {
+      "main": [
+        [
+          {
+            "node": "Leer Equipos GRADUATE EPG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Equipos GRADUATE EPG": {
+      "main": [
+        [
+          {
+            "node": "Leer Base 1775 Alumnos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Base 1775 Alumnos": {
+      "main": [
+        [
+          {
+            "node": "Leer Reuniones EPG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Reuniones EPG": {
+      "main": [
+        [
+          {
+            "node": "Construir Ficha Estudiante V2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construir Ficha Estudiante V2": {
+      "main": [
+        [
+          {
+            "node": "Responder JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Lima"
+  },
+  "active": false
+}
