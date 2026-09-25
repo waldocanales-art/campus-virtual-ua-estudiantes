@@ -30,7 +30,7 @@ export default function Home(){
 
  if(!data) return <main className="shell">
   <section className="loginCard">
-   <div className="hawksMaster"><img src="/ua-hawks-master.svg?v=2" alt="UA HAWKS · Plataforma Universitaria · Tecnología que te acompaña hasta tu próximo logro"/></div>
+   <div className="hawksMaster"><img src="/wide_high_resolution_promotional_banner_illustrat.png?v=4" alt="UA HAWKS · Plataforma Universitaria · Tecnología que te acompaña hasta tu próximo logro"/></div>
    <p className="eyebrow">Universidad Autónoma del Perú · Posgrado</p>
    <p className="muted">Acceso al seguimiento de tu proceso de titulación.</p>
    <form onSubmit={submit}>
